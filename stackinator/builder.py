@@ -237,11 +237,13 @@ class Builder:
             with packages_path.open("w") as fid:
                 fid.write(packages_yaml)
 
-        # Configure the CSCS custom spack environments.
-        # Step 1: copy the CSCS repo to store_path where, it will be used to
-        #         build the stack, and then be part of the upstream provided
-        #         to users of the stack.
-        repo_src = self.root / "repo"
+        # If a repo is specified, use it as the default and add alps.
+        user_repo_path = recipe.path / "repo"
+        alps_repo_path = self.root / "repo"
+        if user_repo_path.exists() and user_repo_path.is_dir():
+            repo_src = user_repo_path
+        else:
+            repo_src = alps_repo_path
         repo_dst = store_path / "repo"
         if repo_dst.exists():
             shutil.rmtree(repo_dst)
@@ -259,23 +261,23 @@ class Builder:
             )
             f.write("\n")
 
-        # Add user-defined repo to internal repo
-        user_repo_path = recipe.path / "repo"
-        if user_repo_path.exists() and user_repo_path.is_dir():
-            user_repo_yaml = user_repo_path / "repo.yaml"
-            if user_repo_yaml.exists():
-                self._logger.warning(f"Found 'repo.yaml' file in {user_repo_path}")
-                self._logger.warning(
-                    "'repo.yaml' is ignored, packages are added to the 'alps' repo"
-                )
-
-            # Copy user-provided recipes into repo
-            user_repo_packages = user_repo_path / "packages"
-            for user_recipe_dir in user_repo_packages.iterdir():
-                if user_recipe_dir.is_dir():  # iterdir() yelds files too
-                    shutil.copytree(
-                        user_recipe_dir, repo_dst / "packages" / user_recipe_dir.name
+        # Add additional alsp repo to specified repo.
+        if (repo_src == usr_repo_path):
+            if alps_repo_path.exists() and alps_repo_path.is_dir():
+                alps_repo_yaml = alps_repo_path / "repo.yaml"
+                if alps_repo_yaml.exists():
+                    self._logger.warning(f"Found 'repo.yaml' file in {alps_repo_path}")
+                    self._logger.warning(
+                        "'repo.yaml' is ignored, packages are added to the 'alps' repo"
                     )
+
+                # Copy user-provided recipes into repo
+                alps_repo_packages = alps_repo_path / "packages"
+                for alps_recipe_dir in alps_repo_packages.iterdir():
+                    if alps_recipe_dir.is_dir():  # iterdir() yelds files too
+                        shutil.copytree(
+                            alps_recipe_dir, repo_dst / "packages" / alps_recipe_dir.name
+                        )
 
         # Generate the makefile and spack.yaml files that describe the compilers
         compiler_files = recipe.compiler_files

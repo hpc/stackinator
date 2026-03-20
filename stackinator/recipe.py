@@ -172,7 +172,8 @@ class Recipe:
         # load the optional mirrors.yaml from system config, and add any additional
         # mirrors specified on the command line.
         self._logger.debug("Configuring mirrors.")
-        self.mirrors = mirror.Mirrors(self.system_config_path, pathlib.Path(args.cache))
+        self.mirrors = mirror.Mirrors(self.system_config_path, 
+                                      pathlib.Path(args.cache) if args.cache else None)
 
         # optional post install hook
         if self.post_install_hook is not None:
@@ -517,11 +518,10 @@ class Recipe:
         )
 
         makefile_template = env.get_template("Makefile.compilers")
-        push_to_cache = self.build_cache_mirror is not None
         files["makefile"] = makefile_template.render(
             compilers=self.compilers,
-            push_to_cache=push_to_cache,
             spack_version=self.spack_version,
+            cache = self.build_cache_mirror,
         )
 
         files["config"] = {}
@@ -548,11 +548,10 @@ class Recipe:
         jenv.filters["py2yaml"] = schema.py2yaml
 
         makefile_template = jenv.get_template("Makefile.environments")
-        push_to_cache = self.build_cache_mirror is not None
         files["makefile"] = makefile_template.render(
             environments=self.environments,
-            push_to_cache=push_to_cache,
             spack_version=self.spack_version,
+            cache=self.build_cache_mirror,
         )
 
         files["config"] = {}

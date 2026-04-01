@@ -4,8 +4,7 @@ import io
 import magic
 import os
 import pathlib
-import urllib.error
-import urllib.request
+import requests
 import yaml
 
 from . import schema, root_logger
@@ -149,12 +148,11 @@ class Mirrors:
 
             elif url.startswith("https://"):
                 try:
-                    request = urllib.request.Request(url, method="HEAD")
-                    urllib.request.urlopen(request)
-                except urllib.error.URLError as e:
+                    requests.request(url=url, method="HEAD")
+                except requests.exceptions.RequestException as err:
                     raise MirrorError(
                         f"Could not reach the mirror url '{url}'. "
-                        f"Check the url listed in mirrors.yaml in system config. \n{e.reason}"
+                        f"Check the url listed in mirrors.yaml in system config. \n{err}"
                     )
 
     @property
